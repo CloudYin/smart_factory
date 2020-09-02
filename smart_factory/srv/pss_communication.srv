@@ -1,0 +1,20 @@
+bool[] pss_virtual_outputs
+---
+bool box_request_in_process
+bool box_request_finished
+bool pen_request_in_process
+bool pen_request_finished
+bool box_handout_in_process
+bool box_handout_finished
+bool pen_handout_in_process
+bool pen_handout_finished
+bool robot_at_home
+bool robot_moving
+bool robot_stopped
+bool box_missing
+bool pen_missing
+bool use_gripper
+bool use_sucker
+bool gripper_open
+bool gripper_close
+bool sucker_on
