@@ -43,7 +43,7 @@ def undistort_pic(dis_file_path, undis_file_path):
     """
     图像校正
     """
-    with np.load('/home/pilz/Pictures/camera_calibration/fname.npz') as X:
+    with np.load('/home/pilz/Pictures/camera_calibration/test_fname.npz') as X:
         mtx = X['mtx']
         dist = X['dist']
 
