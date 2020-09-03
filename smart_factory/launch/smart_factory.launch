@@ -106,6 +106,6 @@ limitations under the License.
     </group>
 
     <!-- startup application script with state-machine-based or similar procedural control -->
-    <!-- <node name="pss_communication_node" pkg="smart_factory" type="pss_communication.py" />  -->
+    <node name="pss_communication_node" pkg="smart_factory" type="pss_communication.py" /> 
 
 </launch>

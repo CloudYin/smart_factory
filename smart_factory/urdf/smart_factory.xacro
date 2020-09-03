@@ -94,7 +94,7 @@
     
 
     <!-- space limitation -->
-    <!-- table length: 1174mm, width: 620mm, height: 1100mm-->
+    <!-- table length: 1174mm, width: 630mm, height: 1100mm-->
     <collision>
       <origin rpy="0 0 0" xyz="0.287 0.22 0.55"/>
       <geometry>
@@ -102,12 +102,12 @@
       </geometry>
     </collision>
 
-    <collision>
+    <!-- <collision>
       <origin rpy="0 0 0" xyz="0.287 -0.42 0.55"/>
       <geometry>
         <box size="1.174 0.01 1.1" />
       </geometry>
-    </collision>
+    </collision> -->
 
     <collision>
       <origin rpy="0 0 0" xyz="-0.3 -0.09 0.55"/>
