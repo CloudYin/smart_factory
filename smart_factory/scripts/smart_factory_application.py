@@ -25,18 +25,20 @@ SAFETY_HEIGHT = 0.1
 STOCK_Z_UP = 0.15
 STOCK_PEN_Y = -0.07
 STOCK_PEN_Z_DOWN = 0.083
-STOCK_BOX_Y = 0.035
+PLATE_PEN_Z_DOWN = 0.081
+STOCK_BOX_Y = 0.0355
 STOCK_BOX_Z_DOWN = 0.043
 PLATE_BOX_Z_DOWN = 0.06
+
 
 # 照片存放路径
 cap_original_file_path = "/home/pilz/Pictures/smart_factory/cap.png" 
 cap_calibrated_file_path = "/home/pilz/Pictures/smart_factory/cap_calibrated.png"
 
 # 速度常量
-PTP_SCALE = 0.1        # Ptp移动速度比例
-LIN_SCALE = 0.05        # Lin移动速度比例
-ACC_SCALE = 0.1        # 加速度比例
+PTP_SCALE = 0.2        # Ptp移动速度比例
+LIN_SCALE = 0.1        # Lin移动速度比例
+PnP_SCALE = 0.02        # 加速度比例
 
 # 初始化变量
 # 接收自pss信号
@@ -209,22 +211,22 @@ def start_program():
             if len(box_pick_X_list) != 0:
                 box_stock_pick_up_pose = Pose(position=Point(box_pick_X_list[0], STOCK_BOX_Y, STOCK_Z_UP), orientation=SUCKER_STOCK_ORIENTATION)
                 box_stock_pick_down_pose = Pose(position=Point(box_pick_X_list[0], STOCK_BOX_Y, STOCK_BOX_Z_DOWN), orientation=SUCKER_STOCK_ORIENTATION)
-                box_conveyor_place_up_pose = Pose(position=Point(-0.381, 0.183, STOCK_Z_UP), orientation=SUCKER_PLATE_ORIENTATION)
-                box_conveyor_place_down_pose = Pose(position=Point(-0.381, 0.183, PLATE_BOX_Z_DOWN), orientation=SUCKER_PLATE_ORIENTATION)
+                box_conveyor_place_up_pose = Pose(position=Point(-0.381, 0.1833, STOCK_Z_UP), orientation=SUCKER_PLATE_ORIENTATION)
+                box_conveyor_place_down_pose = Pose(position=Point(-0.381, 0.1833, PLATE_BOX_Z_DOWN), orientation=SUCKER_PLATE_ORIENTATION)
                 
                 robot_at_home = False
                 r.move(Ptp(goal=START_POSE, vel_scale=PTP_SCALE))
                 r.move(Lin(goal=box_stock_pick_up_pose, reference_frame="prbt_base_link", vel_scale=LIN_SCALE, relative=False))
-                r.move(Lin(goal=box_stock_pick_down_pose, reference_frame="prbt_base_link", vel_scale=LIN_SCALE, relative=False))
+                r.move(Lin(goal=box_stock_pick_down_pose, reference_frame="prbt_base_link", vel_scale=PnP_SCALE, relative=False))
                 sucker_on = True
                 rospy.sleep(0.5)
-                r.move(Lin(goal=box_stock_pick_up_pose, reference_frame="prbt_base_link", vel_scale=LIN_SCALE, relative=False))
+                r.move(Lin(goal=box_stock_pick_up_pose, reference_frame="prbt_base_link", vel_scale=PnP_SCALE, relative=False))
                 
                 r.move(Lin(goal=box_conveyor_place_up_pose, reference_frame="prbt_base_link", vel_scale=LIN_SCALE, relative=False))
-                r.move(Lin(goal=box_conveyor_place_down_pose, reference_frame="prbt_base_link", vel_scale=LIN_SCALE, relative=False))
+                r.move(Lin(goal=box_conveyor_place_down_pose, reference_frame="prbt_base_link", vel_scale=PnP_SCALE, relative=False))
                 sucker_on = False
                 rospy.sleep(0.5)
-                r.move(Lin(goal=box_conveyor_place_up_pose, reference_frame="prbt_base_link", vel_scale=LIN_SCALE, relative=False))
+                r.move(Lin(goal=box_conveyor_place_up_pose, reference_frame="prbt_base_link", vel_scale=PnP_SCALE, relative=False))
                 r.move(Ptp(goal=START_POSE, vel_scale=PTP_SCALE))
                 box_request_in_process = False
                 box_request_finished = True
@@ -234,29 +236,44 @@ def start_program():
                 box_missing = True
 
 
-        if pen_request:
-            pen_request_in_process = True
-            pen_request_finished = False
-            use_gripper = True
-            use_sucker = False
-            take_picutre(cap_original_file_path)
-            undistort_pic(cap_original_file_path, cap_calibrated_file_path)
-            pen_pick_X_list = get_pen_pose(cap_calibrated_file_path)
-            if len(pen_pick_X_list) != 0:
-                pen_stock_pick_up_pose = Pose(position=Point(pen_pick_X_list[0], STOCK_PEN_Y, STOCK_Z_UP), orientation=GRIPPER_STOCK_ORIENTATION)
-                pen_stock_pick_down_pose = Pose(position=Point(pen_pick_X_list[0], STOCK_PEN_Y, STOCK_PEN_Z_DOWN), orientation=GRIPPER_STOCK_ORIENTATION)
-                robot_at_home = False
-                r.move(Ptp(goal=START_POSE, vel_scale=PTP_SCALE))
-                r.move(Lin(goal=pen_stock_pick_up_pose, reference_frame="prbt_base_link", vel_scale=LIN_SCALE, relative=False))
-                r.move(Lin(goal=pen_stock_pick_down_pose, reference_frame="prbt_base_link", vel_scale=LIN_SCALE, relative=False))
-                r.move(Lin(goal=pen_stock_pick_up_pose, reference_frame="prbt_base_link", vel_scale=LIN_SCALE, relative=False))
-                r.move(Ptp(goal=START_POSE, vel_scale=PTP_SCALE))
-                pen_request_in_process = False
-                pen_request_finished = True
-                robot_at_home = True
-            else:
-                rospy.loginfo("box missing!")
-                pen_missing = True
+        # if pen_request:
+        pen_request_in_process = True
+        pen_request_finished = False
+        use_gripper = True
+        use_sucker = False
+        gripper_open = True
+        gripper_close = False
+        take_picutre(cap_original_file_path)
+        undistort_pic(cap_original_file_path, cap_calibrated_file_path)
+        pen_pick_X_list = get_pen_pose(cap_calibrated_file_path)
+        if len(pen_pick_X_list) != 0:
+            pen_stock_pick_up_pose = Pose(position=Point(pen_pick_X_list[0], STOCK_PEN_Y, STOCK_Z_UP), orientation=GRIPPER_STOCK_ORIENTATION)
+            pen_stock_pick_down_pose = Pose(position=Point(pen_pick_X_list[0], STOCK_PEN_Y, STOCK_PEN_Z_DOWN), orientation=GRIPPER_STOCK_ORIENTATION)
+            pen_conveyor_place_up_pose = Pose(position=Point(-0.368, 0.176, STOCK_Z_UP), orientation=GRIPPER_PLATE_ORIENTATION)
+            pen_conveyor_place_down_pose = Pose(position=Point(-0.368, 0.176, PLATE_PEN_Z_DOWN), orientation=GRIPPER_PLATE_ORIENTATION)
+            
+            robot_at_home = False
+            r.move(Ptp(goal=START_POSE, vel_scale=PTP_SCALE))
+            r.move(Lin(goal=pen_stock_pick_up_pose, reference_frame="prbt_base_link", vel_scale=LIN_SCALE, relative=False))
+            r.move(Lin(goal=pen_stock_pick_down_pose, reference_frame="prbt_base_link", vel_scale=PnP_SCALE, relative=False))
+            gripper_open = False
+            gripper_close = True
+            rospy.sleep(0.5)
+            r.move(Lin(goal=pen_stock_pick_up_pose, reference_frame="prbt_base_link", vel_scale=PnP_SCALE, relative=False))
+            
+            r.move(Lin(goal=pen_conveyor_place_up_pose, reference_frame="prbt_base_link", vel_scale=LIN_SCALE, relative=False))
+            r.move(Lin(goal=pen_conveyor_place_down_pose, reference_frame="prbt_base_link", vel_scale=PnP_SCALE, relative=False))
+            gripper_open = True
+            gripper_close = False
+            rospy.sleep(0.5)
+            r.move(Lin(goal=pen_conveyor_place_up_pose, reference_frame="prbt_base_link", vel_scale=PnP_SCALE, relative=False))
+            r.move(Ptp(goal=START_POSE, vel_scale=PTP_SCALE))
+            pen_request_in_process = False
+            pen_request_finished = True
+            robot_at_home = True
+            # else:
+            #     rospy.loginfo("box missing!")
+            #     pen_missing = True
         
 
         if box_handout:
@@ -273,17 +290,17 @@ def start_program():
             robot_at_home = False
             r.move(Ptp(goal=START_POSE, vel_scale=PTP_SCALE))
             r.move(Lin(goal=box_conveyor_pick_up_pose, reference_frame="prbt_base_link", vel_scale=LIN_SCALE, relative=False))
-            r.move(Lin(goal=box_conveyor_pick_down_pose, reference_frame="prbt_base_link", vel_scale=LIN_SCALE, relative=False))
+            r.move(Lin(goal=box_conveyor_pick_down_pose, reference_frame="prbt_base_link", vel_scale=PnP_SCALE, relative=False))
             sucker_on = True
             rospy.sleep(0.5)
-            r.move(Lin(goal=box_conveyor_pick_up_pose, reference_frame="prbt_base_link", vel_scale=LIN_SCALE, relative=False))
+            r.move(Lin(goal=box_conveyor_pick_up_pose, reference_frame="prbt_base_link", vel_scale=PnP_SCALE, relative=False))
                 
             r.move(Lin(goal=START_POSE, vel_scale=LIN_SCALE))
             r.move(Lin(goal=box_outlet_in_pose, reference_frame="prbt_base_link", vel_scale=LIN_SCALE, relative=False))
-            r.move(Lin(goal=box_outlet_out_pose, reference_frame="prbt_base_link", vel_scale=LIN_SCALE, relative=False))
+            r.move(Lin(goal=box_outlet_out_pose, reference_frame="prbt_base_link", vel_scale=PnP_SCALE, relative=False))
             sucker_on = False
             rospy.sleep(0.5)
-            r.move(Lin(goal=box_outlet_in_pose, reference_frame="prbt_base_link", vel_scale=LIN_SCALE, relative=False))
+            r.move(Lin(goal=box_outlet_in_pose, reference_frame="prbt_base_link", vel_scale=PnP_SCALE, relative=False))
             r.move(Ptp(goal=START_POSE, vel_scale=PTP_SCALE))
             box_handout_in_process = False
             box_handout_finished = True

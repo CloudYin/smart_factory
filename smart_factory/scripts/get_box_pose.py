@@ -35,14 +35,14 @@ def get_box_pose(calibrated_file_path):
                 points = cv2.boxPoints(rect)
                 points = np.int0(points)
                 cv2.drawContours(img_contour, [points], -1, (0, 255, 0), 2)
-                pickX = (-222 - centerX * 0.182 ) / 1000
+                pickX = (-255.5 - centerX * 0.183 ) / 1000
                 box_pickX_list.append(pickX)
                 cv2.circle(img_contour, (int(centerX), int(centerY)), 5, (0, 0, 255))
-    x, y = img_contour.shape[0:2]
-    reshaped_img = cv2.resize(img_contour, (int(y / 3), int(x / 3)))
-    cv2.imshow("img_contour", reshaped_img)
-    cv2.waitKey(500)
-    cv2.destroyAllWindows()
+    # x, y = img_contour.shape[0:2]
+    # reshaped_img = cv2.resize(img_contour, (int(y / 3), int(x / 3)))
+    # cv2.imshow("img_contour", reshaped_img)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
     box_pickX_list = sorted(box_pickX_list)
     return box_pickX_list
 

@@ -51,8 +51,8 @@ def connect_pss(client):
         client.write_coil(12, pen_missing)
         client.write_coil(13, use_gripper)
         client.write_coil(14, use_sucker)
-        client.write_coil(15, gripper_open)
-        client.write_coil(16, gripper_close)
+        client.write_coil(15, gripper_close)
+        client.write_coil(16, gripper_open)
         client.write_coil(17, sucker_on)
     else:
         print("Modbus TCP connect to PSS is interrupted. Connecting...")

@@ -35,14 +35,14 @@ def get_pen_pose(calibrated_file_path):
                 points = cv2.boxPoints(rect)
                 points = np.int0(points)
                 cv2.drawContours(img_contour, [points], -1, (0, 255, 0), 2)
-                pickX = (-217.55 - centerX * 0.1795 ) / 1000
+                pickX = (-252.5 - centerX * 0.18 ) / 1000
                 pen_pickX_list.append(pickX)
                 cv2.circle(img_contour, (int(centerX), int(centerY)), 5, (0, 0, 255))
-    x, y = img_contour.shape[0:2]
-    reshaped_img = cv2.resize(img_contour, (int(y / 3), int(x / 3)))
-    cv2.imshow("img_contour", reshaped_img)
-    cv2.waitKey(500)
-    cv2.destroyAllWindows()
+    # x, y = img_contour.shape[0:2]
+    # reshaped_img = cv2.resize(img_contour, (int(y / 3), int(x / 3)))
+    # cv2.imshow("img_contour", reshaped_img)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
     pen_pickX_list = sorted(pen_pickX_list)
     return pen_pickX_list
 
