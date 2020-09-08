@@ -57,7 +57,6 @@ def undistort_pic(dis_file_path, undis_file_path):
     # 图像裁剪并保存
     x, y, w, h = roi
     dst = dst[y:y+h, x:x+w]
-    dst = dst[196:1746, 194:2394]
     cv2.imwrite(undis_file_path, dst)
     return 0
 

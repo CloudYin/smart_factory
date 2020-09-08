@@ -35,7 +35,7 @@ def get_pen_pose(calibrated_file_path):
                 points = cv2.boxPoints(rect)
                 points = np.int0(points)
                 cv2.drawContours(img_contour, [points], -1, (0, 255, 0), 2)
-                pickX = (-252.5 - centerX * 0.18 ) / 1000
+                pickX = (-247 - centerX * 0.1798 ) / 1000
                 pen_pickX_list.append(pickX)
                 cv2.circle(img_contour, (int(centerX), int(centerY)), 5, (0, 0, 255))
     # x, y = img_contour.shape[0:2]

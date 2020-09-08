@@ -102,12 +102,12 @@
       </geometry>
     </collision>
 
-    <!-- <collision>
-      <origin rpy="0 0 0" xyz="0.287 -0.42 0.55"/>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.287 -0.44 0.55"/>
       <geometry>
         <box size="1.174 0.01 1.1" />
       </geometry>
-    </collision> -->
+    </collision>
 
     <collision>
       <origin rpy="0 0 0" xyz="-0.3 -0.09 0.55"/>
