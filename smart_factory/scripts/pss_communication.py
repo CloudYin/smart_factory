@@ -16,7 +16,7 @@ box_handout_finished = False
 pen_handout_in_process = False
 pen_handout_finished = False
 robot_at_home = False
-robot_moving = False
+robot_program_start = False
 robot_stopped = False
 box_missing = False
 pen_missing = False
@@ -45,7 +45,7 @@ def connect_pss(client):
         client.write_coil(6, pen_handout_in_process)
         client.write_coil(7, pen_handout_finished)
         client.write_coil(8, robot_at_home)
-        client.write_coil(9, robot_moving)
+        client.write_coil(9, robot_program_start)
         client.write_coil(10, robot_stopped)
         client.write_coil(11, box_missing)
         client.write_coil(12, pen_missing)
@@ -80,7 +80,7 @@ if __name__ == "__main__":
             pen_handout_in_process = res.pen_handout_in_process
             pen_handout_finished = res.pen_handout_finished
             robot_at_home = res.robot_at_home
-            robot_moving = res.robot_moving
+            robot_program_start = res.robot_program_start
             robot_stopped = res.robot_stopped
             box_missing = res.box_missing
             pen_missing = res.pen_missing

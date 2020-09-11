@@ -13,23 +13,22 @@ from get_box_pose import get_box_pose
 
 
 # API版本号（不允许修改）
-REQUIRED_API_VERSION = "1"    # API版本号
+REQUIRED_API_VERSION = "1"
 
 # 位置常量（因涉及到实际机械位置，因此不要修改）
-START_POSE = [math.radians(-30), 0, math.radians(123), 0, math.radians(57), math.radians(17)]    # 起始关节角度
-GRIPPER_STOCK_ORIENTATION = from_euler(0, math.radians(180),  math.radians(47))
-GRIPPER_PLATE_PLACE_ORIENTATION = from_euler(0, math.radians(180),  math.radians(137))
-GRIPPER_PLATE_PICK_ORIENTATION = from_euler(0, math.radians(180),  math.radians(-43))
-SUCKER_STOCK_ORIENTATION = from_euler(0, math.radians(180),  math.radians(-45))
-SUCKER_PLATE_ORIENTATION = from_euler(0, math.radians(180),  math.radians(45))
+START_POSE = [math.radians(-30), 0, math.radians(123), 0, math.radians(57), math.radians(15)]    # 起始关节角度
+GRIPPER_STOCK_ORIENTATION = from_euler(0, math.radians(180),  math.radians(47))         # 存储位置夹爪方向
+GRIPPER_PLATE_ORIENTATION = from_euler(0, math.radians(180),  math.radians(137))        # 托盘位置夹爪方向
+SUCKER_STOCK_ORIENTATION = from_euler(0, math.radians(180),  math.radians(-45))         # 存储位置吸盘方向
+SUCKER_PLATE_ORIENTATION = from_euler(0, math.radians(180),  math.radians(45))          # 托盘位置吸盘方向
 SAFETY_HEIGHT = 0.1
 STOCK_Z_UP = 0.15
 STOCK_PEN_Y = -0.07
 STOCK_PEN_Z_DOWN = 0.083
 PLATE_PEN_Z_DOWN = 0.081
 STOCK_BOX_Y = 0.0355
-STOCK_BOX_Z_DOWN = 0.0495
-PLATE_BOX_Z_DOWN = 0.062
+STOCK_BOX_Z_DOWN = 0.062
+PLATE_BOX_Z_DOWN = 0.075
 
 
 
@@ -38,22 +37,22 @@ cap_original_file_path = "/home/pilz/Pictures/smart_factory/cap.png"
 cap_calibrated_file_path = "/home/pilz/Pictures/smart_factory/cap_calibrated.png"
 
 # 速度常量
-PTP_SCALE = 0.5        # Ptp移动速度比例
-LIN_SCALE = 0.4        # Lin移动速度比例
-PnP_SCALE = 0.1       # Pick & Place
+PTP_SCALE = 0.5        # 点到点移动速度比例
+LIN_SCALE = 0.4        # 直线移动速度比例
+PnP_SCALE = 0.1        # 拾取与放置速度比例
 
 # 初始化变量
-# 接收自pss信号
+# 存储上一周期状态（用于上升沿触发）
 robot_sto_last = True
 robot_stop_last = True
 robot_start_last = True
-back_home_last = True
+
+# 接收自pss信号
 robot_sto = False
 box_request = False
 pen_request = False
 box_handout = False
 pen_handout = False
-back_home = False
 
 # 发送至pss信号
 box_request_in_process = False
@@ -65,7 +64,7 @@ box_handout_finished = False
 pen_handout_in_process = False
 pen_handout_finished = False
 robot_at_home = False
-robot_moving = False
+robot_program_start = False
 robot_stopped = False
 box_missing = False
 pen_missing = False
@@ -80,6 +79,9 @@ box_pick_X_list = []
 
 
 class PssCommunicationNode(object):
+    """
+    与PSS4000建立通讯并执行机器人暂停/继续动作
+    """
     def __init__(self):
         ModbusTcpClient('192.168.1.2', port=502)
         rospy.Service('pss_communication',
@@ -91,13 +93,11 @@ class PssCommunicationNode(object):
         global robot_sto_last
         global robot_stop_last
         global robot_start_last
-        global back_home_last
         global robot_sto
         global box_request
         global pen_request
         global box_handout
         global pen_handout
-        global back_home
 
         # 发送至pss信号
         global box_request_in_process
@@ -109,7 +109,7 @@ class PssCommunicationNode(object):
         global pen_handout_in_process
         global pen_handout_finished
         global robot_at_home
-        global robot_moving
+        global robot_program_start
         global robot_stopped
         global box_missing
         global pen_missing
@@ -128,31 +128,24 @@ class PssCommunicationNode(object):
         robot_start = req.pss_virtual_outputs[5]
         robot_stop = req.pss_virtual_outputs[6]
         robot_reset = req.pss_virtual_outputs[7]
-        back_home = req.pss_virtual_outputs[8]
         
         # 逻辑处理
-        if (not robot_sto and robot_sto_last) or (not robot_stop_last and robot_stop) or (not back_home_last and back_home):
+        if (not robot_sto and robot_sto_last) or (not robot_stop_last and robot_stop):
             r.pause()
             rospy.loginfo("Robot paused")
         
         if (not robot_start_last and robot_start):
-            rospy.sleep(1)
             r.resume()
-        
-        if (not back_home_last and back_home):
-            rospy.sleep(1)
-            r.resume()
-            r.move(Ptp(goal=START_POSE, vel_scale=PTP_SCALE))
-            robot_at_home = True
+            rospy.loginfo("Robot resumed")
         
         if robot_reset:
             box_missing = False
             pen_missing = False
         
+        # 将当前状态保存至上一周期状态
         robot_sto_last = robot_sto
         robot_stop_last = robot_stop
         robot_start_last = robot_start
-        back_home_last = back_home
         
         # 发送至pss信号
         pss_communication_response = pss_communicationResponse()
@@ -165,7 +158,7 @@ class PssCommunicationNode(object):
         pss_communication_response.pen_handout_in_process = pen_handout_in_process
         pss_communication_response.pen_handout_finished = pen_handout_finished
         pss_communication_response.robot_at_home = robot_at_home
-        pss_communication_response.robot_moving = robot_moving
+        pss_communication_response.robot_program_start = robot_program_start
         pss_communication_response.robot_stopped = robot_stopped
         pss_communication_response.box_missing = box_missing
         pss_communication_response.pen_missing = pen_missing
@@ -178,6 +171,9 @@ class PssCommunicationNode(object):
 
 
 def cap_and_analyze():
+    """
+    拍照并获取笔和名片夹X方向位置
+    """
     global pen_pick_X_list
     global box_pick_X_list
     global box_missing
@@ -214,7 +210,7 @@ def start_program():
     global pen_handout_in_process
     global pen_handout_finished
     global robot_at_home
-    global robot_moving
+    global robot_program_start
     global robot_stopped
     global box_missing
     global pen_missing
@@ -231,9 +227,14 @@ def start_program():
 
     rospy.loginfo("Program started")  # log
 
-    cap_and_analyze()
-    robot_moving = True
+    robot_program_start = True
+    use_gripper = False
+    use_sucker = True
+    gripper_open = True
+    gripper_close = False
+    sucker_on = False
     robot_at_home = False
+
     current_pose = r.get_current_pose()
     if current_pose.position.z < SAFETY_HEIGHT:
         r.move(Lin(goal=Pose(position=Point(0, 0, -0.05)), reference_frame="prbt_tcp", vel_scale=LIN_SCALE, acc_scale=0.1))
@@ -295,15 +296,15 @@ def start_program():
             gripper_close = False
             if len(pen_pick_X_list) != 0:
                 if pen_pick_X_list[0] < -0.55:
-                    STOCK_PEN_Y = -0.071
-                elif box_pick_X_list[0] > -0.28:
-                    STOCK_PEN_Y = -0.071
+                    STOCK_PEN_Y = -0.069
+                elif pen_pick_X_list[0] > -0.34:
+                    STOCK_PEN_Y = -0.072
                 else:
-                    STOCK_PEN_Y = -0.07
+                    STOCK_PEN_Y = -0.071
                 pen_stock_pick_up_pose = Pose(position=Point(pen_pick_X_list[0], STOCK_PEN_Y, STOCK_Z_UP), orientation=GRIPPER_STOCK_ORIENTATION)
                 pen_stock_pick_down_pose = Pose(position=Point(pen_pick_X_list[0], STOCK_PEN_Y, STOCK_PEN_Z_DOWN), orientation=GRIPPER_STOCK_ORIENTATION)
-                pen_conveyor_place_up_pose = Pose(position=Point(-0.368, 0.173, STOCK_Z_UP), orientation=GRIPPER_PLATE_PLACE_ORIENTATION)
-                pen_conveyor_place_down_pose = Pose(position=Point(-0.368, 0.173, PLATE_PEN_Z_DOWN), orientation=GRIPPER_PLATE_PLACE_ORIENTATION)
+                pen_conveyor_place_up_pose = Pose(position=Point(-0.368, 0.1715, STOCK_Z_UP), orientation=GRIPPER_PLATE_ORIENTATION)
+                pen_conveyor_place_down_pose = Pose(position=Point(-0.368, 0.1715, PLATE_PEN_Z_DOWN), orientation=GRIPPER_PLATE_ORIENTATION)
                 
                 robot_at_home = False
                 r.move(Ptp(goal=START_POSE, vel_scale=PTP_SCALE, acc_scale=0.1))
@@ -338,8 +339,8 @@ def start_program():
             sucker_on = False
             box_conveyor_pick_up_pose = Pose(position=Point(-0.137, 0.331, STOCK_Z_UP), orientation=SUCKER_PLATE_ORIENTATION)
             box_conveyor_pick_down_pose = Pose(position=Point(-0.137, 0.331, PLATE_BOX_Z_DOWN), orientation=SUCKER_PLATE_ORIENTATION)
-            box_outlet_in_pose = [-0.018, -0.02, 1.434, -0.769, 1.646, 0.685]
-            box_outlet_out_pose = [-0.447, -0.13, 1.3, -0.693, 1.377, 0.354]
+            box_outlet_in_pose = [0.127, -0.058, 1.242, -0.798, 1.855, 0.694]
+            box_outlet_out_pose = [-0.45, -0.132, 1.293, -0.691, 1.379, 0.364]
                 
             robot_at_home = False
             r.move(Ptp(goal=START_POSE, vel_scale=PTP_SCALE, acc_scale=0.1))
@@ -354,7 +355,7 @@ def start_program():
             box_handout_seq = Sequence()
             box_handout_seq.append(Lin(goal=START_POSE, vel_scale=LIN_SCALE, acc_scale=0.1), blend_radius=0.05)
             box_handout_seq.append(Lin(goal=box_outlet_in_pose, reference_frame="prbt_base_link", vel_scale=LIN_SCALE, acc_scale=0.1), blend_radius=0.05)
-            box_handout_seq.append(Lin(goal=box_outlet_out_pose, reference_frame="prbt_base_link", vel_scale=PnP_SCALE, acc_scale=0.1))
+            box_handout_seq.append(Lin(goal=box_outlet_out_pose, reference_frame="prbt_base_link", vel_scale=PnP_SCALE, acc_scale=0.08))
             r.move(box_handout_seq)
             sucker_on = False
             rospy.sleep(0.5)
@@ -370,10 +371,10 @@ def start_program():
             use_sucker = False
             gripper_open = True
             gripper_close = False
-            pen_conveyor_pick_up_pose = Pose(position=Point(-0.137, 0.332, STOCK_Z_UP), orientation=GRIPPER_PLATE_PICK_ORIENTATION)
-            pen_conveyor_pick_down_pose = Pose(position=Point(-0.137, 0.332, PLATE_PEN_Z_DOWN + 0.001), orientation=GRIPPER_PLATE_PICK_ORIENTATION)
-            pen_outlet_in_pose = [0.148, -0.104, 1.235, -0.791, 1.843, -0.789]
-            pen_outlet_out_pose = [-0.403, -0.155, 1.229, -0.7, 1.44, -1.155]
+            pen_conveyor_pick_up_pose = Pose(position=Point(-0.105, 0.33, STOCK_Z_UP), orientation=GRIPPER_PLATE_ORIENTATION)
+            pen_conveyor_pick_down_pose = Pose(position=Point(-0.105, 0.33, PLATE_PEN_Z_DOWN + 0.001), orientation=GRIPPER_PLATE_ORIENTATION)
+            pen_outlet_in_pose = [0.085, 0.011, 1.426, -0.777, 1.745, 2.339]
+            pen_outlet_out_pose = [-0.426, -0.057, 1.371, -0.698, 1.392, 1.972]
                 
             robot_at_home = False
             r.move(Ptp(goal=START_POSE, vel_scale=PTP_SCALE, acc_scale=0.1))

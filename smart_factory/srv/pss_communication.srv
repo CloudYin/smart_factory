@@ -9,7 +9,7 @@ bool box_handout_finished
 bool pen_handout_in_process
 bool pen_handout_finished
 bool robot_at_home
-bool robot_moving
+bool robot_program_start
 bool robot_stopped
 bool box_missing
 bool pen_missing
