@@ -235,6 +235,11 @@ def start_program():
     sucker_on = False
     robot_at_home = False
 
+    """
+    获取当前位置
+    若当前Z位置小于安全高度，则反向提升50mm
+    若当前位置Y>330mm，Z>400mm，则反向拉伸100mm
+    """
     current_pose = r.get_current_pose()
     if current_pose.position.z < SAFETY_HEIGHT:
         r.move(Lin(goal=Pose(position=Point(0, 0, -0.05)), reference_frame="prbt_tcp", vel_scale=LIN_SCALE, acc_scale=0.1))
@@ -245,6 +250,8 @@ def start_program():
 
     while not rospy.is_shutdown():
         cap_and_analyze()
+
+        # 名片盒取料工序
         if box_request:
             box_request_in_process = True
             box_request_finished = False
@@ -287,6 +294,7 @@ def start_program():
             box_request_finished = False
 
 
+        # 笔取料工序
         if pen_request:
             pen_request_in_process = True
             pen_request_finished = False
@@ -330,7 +338,7 @@ def start_program():
         else:
             pen_request_finished = False
         
-
+        # 名片盒出料工序
         if box_handout:
             box_handout_in_process = True
             box_handout_finished = False
@@ -363,7 +371,7 @@ def start_program():
             r.move(Ptp(goal=START_POSE, vel_scale=PTP_SCALE, acc_scale=0.1))
             robot_at_home = True
 
-
+        # 笔出料工序
         if pen_handout:
             pen_handout_in_process = True
             pen_handout_finished = False
