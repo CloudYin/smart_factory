@@ -38,7 +38,7 @@ cap_calibrated_file_path = "/home/pilz/Pictures/smart_factory/cap_calibrated.png
 
 # 速度常量
 PTP_SCALE = 0.5        # 点到点移动速度比例
-LIN_SCALE = 0.4        # 直线移动速度比例
+LIN_SCALE = 0.35        # 直线移动速度比例
 PnP_SCALE = 0.1        # 拾取与放置速度比例
 
 # 初始化变量
